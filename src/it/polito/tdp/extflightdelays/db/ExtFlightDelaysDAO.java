@@ -7,14 +7,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Flight;
+import it.polito.tdp.extflightdelays.model.Route;
 
 public class ExtFlightDelaysDAO {
 
-	public List<String> loadAllStates(){
+	public List<String> loadAllStates() {
 		String sql = "SELECT distinct(STATE) from airports";
 		List<String> result = new ArrayList<String>();
 
@@ -36,7 +38,7 @@ public class ExtFlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-	
+
 	public List<Airline> loadAllAirlines() {
 		String sql = "SELECT * from airlines";
 		List<Airline> result = new ArrayList<Airline>();
@@ -85,7 +87,6 @@ public class ExtFlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-	
 
 	public List<Flight> loadAllFlights() {
 		String sql = "SELECT * FROM flights";
@@ -114,5 +115,31 @@ public class ExtFlightDelaysDAO {
 			System.out.println("Errore connessione al database");
 			throw new RuntimeException("Error Connection Database");
 		}
+	}
+
+	public List<Route> loadAllRoutesCount(Map<Integer, Airport> airportIdMap) {
+		String sql = "SELECT ORIGIN_AIRPORT_ID, DESTINATION_AIRPORT_ID, COUNT(TAIL_NUMBER) AS totFlights "
+				+ "FROM flights GROUP BY ORIGIN_AIRPORT_ID, DESTINATION_AIRPORT_ID ORDER BY origin_airport_id";
+		List<Route> result = new ArrayList<>();
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Route r = new Route(airportIdMap.get(rs.getInt("ORIGIN_AIRPORT_ID")),
+						airportIdMap.get(rs.getInt("DESTINATION_AIRPORT_ID")), rs.getInt("totFlights"));
+				result.add(r);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+
 	}
 }
